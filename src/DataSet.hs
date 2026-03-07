@@ -1,4 +1,4 @@
-module DataSet (parse_text) where
+module DataSet (Entry(..), parse_text) where
 import GHC.Float (double2Int)
 
 data Entry = Entry {

@@ -1,3 +1,4 @@
 .stack-work/
 *~
-SanityCheck_DataSet__1.txt
+*.txt
+src/Main
