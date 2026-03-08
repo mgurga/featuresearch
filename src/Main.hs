@@ -17,7 +17,7 @@ main = do
 
     dstext <- readFile (args!!0)
     let ds = parse_text dstext
-    putStrLn ("header: " ++ (show (ds!!0)))
+    putStrLn ("header " ++ (show (ds!!0)))
 
     res <- start_feature_search ds
-    putStrLn ("final results: " ++ (show res))
+    putStrLn ("final results " ++ (show res))
