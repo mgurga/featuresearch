@@ -10,10 +10,9 @@ data SearchResults = SearchResults {
 
 start_feature_search :: [Entry] -> IO SearchResults
 start_feature_search ds = do
+    -- create empty results to add to
     let emptyresults = SearchResults {best_accuracy = 0, accuracys = [], selected_features = []}
     fsr <- feature_search ds emptyresults
-
-    -- return result with best accuracy
     return fsr
 
 feature_search :: [Entry] -> SearchResults -> IO SearchResults
@@ -23,42 +22,30 @@ feature_search ds prev_results = do
     let features_to_search = 
          filter (\f -> (not (f `elem` prev_features))) [0..((length (features (ds!!0))) - 1)]
 
-    if (length features_to_search) == 1 then do
-        putStr ("- considering last feature " ++ (show (features_to_search!!0)))
-        let new_feature_list = (selected_features prev_results) ++ [(features_to_search!!0)]
-        let acc = cross_validation_accuracy ds new_feature_list
-        putStrLn " done"
+    putStr ("- considering feature ")
+    all_paths <-
+        mapM
+        (\i -> do
+            putStr ((show i) ++ " ... ")
+            let new_feature_list = (selected_features prev_results) ++ [i]
+            let acc = cross_validation_accuracy ds new_feature_list
 
-        -- return last node of path
-        return
-            SearchResults {
-                    best_accuracy = max (best_accuracy prev_results) acc,
-                    accuracys = (accuracys prev_results) ++ [acc],
-                    selected_features = new_feature_list
+            return SearchResults {
+                best_accuracy = max (best_accuracy prev_results) acc,
+                accuracys = (accuracys prev_results) ++ [acc],
+                selected_features = new_feature_list
             }
-    else do
-        putStr ("- considering feature ")
-        all_paths <-
-            mapM
-            (\i -> do
-                putStr ((show i) ++ " ... ")
-                let new_feature_list = (selected_features prev_results) ++ [i]
-                let acc = cross_validation_accuracy ds new_feature_list
+        )
+        features_to_search
+    -- putStrLn ("finished searching feature list " ++ (show (selected_features prev_results)))
+    let best_path = best_result all_paths
+    putStrLn ("\n- best accuracy " ++ (show (best_accuracy best_path)))
+    putStrLn ((show best_path))
 
-                return
-                    SearchResults {
-                        best_accuracy = max (best_accuracy prev_results) acc,
-                        accuracys = (accuracys prev_results) ++ [acc],
-                        selected_features = new_feature_list
-                    }
-            )
-            features_to_search
-        -- putStrLn ("finished searching feature list " ++ (show (selected_features prev_results)))
-        let best_path = best_result all_paths
-        putStrLn ("\n- best accuracy " ++ (show (best_accuracy best_path)))
-        putStrLn ((show best_path))
-
-        -- only call feature search on next layer if still features to test
+    -- only call feature search on next layer if still features to test
+    if (length features_to_search) == 1 then
+        return (all_paths!!0)
+    else
         feature_search ds best_path
 
 cross_validation_accuracy :: [Entry] -> [Int] -> Float
@@ -72,16 +59,18 @@ cross_validation_accuracy ds feature_list = do
             let targetfeats = map (\fi -> ((features (ds!!dsi))!!fi)) feature_list
             let nearestneighbor =
                   foldr
-                    (\n1 n2 -> do
-                        if n1 == (ds!!dsi) then -- dont calculate distance of same dataset entry
-                            n2
+                    (\neighbor best -> do
+                        if neighbor == (ds!!dsi) then -- dont calculate distance of same dataset entry
+                            best
                         else do
-                            let n1feats = map (\fi -> ((features n1)!!fi)) feature_list
-                            let n2feats = map (\fi -> ((features n2)!!fi)) feature_list
-                            if ((ndist n1feats targetfeats) < (ndist n2feats targetfeats)) then
-                                n1 -- calculate distance b/w target
+                            -- filter for features we want to test
+                            let neighborfeats = map (\fi -> ((features neighbor)!!fi)) feature_list
+                            let bestfeats = map (\fi -> ((features best)!!fi)) feature_list
+                            -- update best neighbor if closer to target
+                            if ((ndist neighborfeats targetfeats) < (ndist bestfeats targetfeats)) then
+                                neighbor
                             else 
-                                n2
+                                best
                     )
                     (ds!!0)
                     ds
