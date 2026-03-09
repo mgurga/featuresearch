@@ -1,4 +1,4 @@
-module FeatureSearch (start_feature_search, cross_validation_accuracy) where
+module FeatureSearch (start_feature_search, cross_validation_accuracy, ndist) where
 
 import DataSet (Entry(..))
 
@@ -19,8 +19,9 @@ feature_search :: [Entry] -> SearchResults -> IO SearchResults
 feature_search ds prev_results = do
     putStrLn ("searching " ++ (show (selected_features prev_results)))
     let prev_features = (selected_features prev_results)
+    -- 1 indexed feature list
     let features_to_search = 
-         filter (\f -> (not (f `elem` prev_features))) [0..((length (features (ds!!0))) - 1)]
+         filter (\f -> (not (f `elem` prev_features))) [1..(length (features (ds!!0)))]
 
     putStr ("- considering feature ")
     all_paths <-
@@ -56,7 +57,7 @@ cross_validation_accuracy ds feature_list = do
           (\dsi acc -> do -- loop over dataset with index dsi and accumulator
             -- set target values based on current dataset entry
             let targetcategory = (category (ds!!dsi)) -- 1 or 2
-            let targetfeats = map (\fi -> ((features (ds!!dsi))!!fi)) feature_list
+            let targetfeats = map (\fi -> ((features (ds!!dsi))!!(fi - 1))) feature_list
             let nearestneighbor =
                   foldr
                     (\neighbor best -> do
@@ -64,8 +65,10 @@ cross_validation_accuracy ds feature_list = do
                             best
                         else do
                             -- filter for features we want to test
-                            let neighborfeats = map (\fi -> ((features neighbor)!!fi)) feature_list
-                            let bestfeats = map (\fi -> ((features best)!!fi)) feature_list
+                            let neighborfeats =
+                                 map (\fi -> ((features neighbor)!!(fi - 1))) feature_list
+                            let bestfeats =
+                                 map (\fi -> ((features best)!!(fi - 1))) feature_list
                             -- update best neighbor if closer to target
                             if ((ndist neighborfeats targetfeats) < (ndist bestfeats targetfeats)) then
                                 neighbor
@@ -76,8 +79,9 @@ cross_validation_accuracy ds feature_list = do
                     ds
             if targetcategory == (category nearestneighbor) then acc + 1 else acc
           ) 0 [0..((length ds) - 1)]
-    correct_guesses / (fromIntegral (length ds))
+    correct_guesses / (fromIntegral ((length ds) - 1))
 
+-- return result with best accuracy
 best_result :: [SearchResults] -> SearchResults
 best_result results =
     foldr
@@ -85,6 +89,7 @@ best_result results =
         (results!!0)
         results
 
+-- euclidean distance calculator
 ndist :: [Double] -> [Double] -> Double
 ndist list1 list2 = do
     let innerlist =
