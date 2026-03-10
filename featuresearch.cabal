@@ -69,4 +69,5 @@ test-suite featuresearch-test
       base >=4.7 && <5
     , containers
     , featuresearch
+    , hspec
   default-language: Haskell2010
