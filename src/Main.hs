@@ -20,7 +20,7 @@ main :: IO ()
 main = do
     args <- getArgs
 
-    if length args == 1 && (args!!0 == "--help" || args!!0 == "-h") then
+    if length args == 1 && (args!!0 == "--help" || args!!0 == "-h" || args!!0 == "help") then
         print_help
     else if length args == 1 then do
         putStrLn ("reading dataset " ++ args!!0)
