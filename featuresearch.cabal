@@ -36,6 +36,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , timeit
   default-language: Haskell2010
 
 executable featuresearch-exe
@@ -53,6 +54,7 @@ executable featuresearch-exe
       base >=4.7 && <5
     , containers
     , featuresearch
+    , timeit
   default-language: Haskell2010
 
 test-suite featuresearch-test
@@ -70,4 +72,5 @@ test-suite featuresearch-test
     , containers
     , featuresearch
     , hspec
+    , timeit
   default-language: Haskell2010
